@@ -1,4 +1,4 @@
-/* Shoal Cohesion Tool — with copy panel & append-to-sheet */
+/* Shoal Cohesion Tool — with copy panel & append-to-sheet (calibration fixed to image pixels) */
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -154,14 +154,23 @@ startCalBtn.addEventListener('click', ()=>{
 });
 canvas.addEventListener('click', ()=>{
   if (calibrating){
-    if (!calStart){ calStart = {x:mouse.x,y:mouse.y}; }
-    else{
-      const dx = mouse.x - calStart.x, dy = mouse.y - calStart.y;
-      const pixels = Math.hypot(dx,dy);
+    if (!calStart){ 
+      calStart = {x:mouse.x,y:mouse.y}; 
+    } else {
+      // FIX: measure calibration length in IMAGE pixels (not canvas)
+      const p1 = canvasToImgCoords(calStart.x, calStart.y);
+      const p2 = canvasToImgCoords(mouse.x, mouse.y);
+      const pixels = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+
       const u = (unitSelect.value==='custom' ? (customUnit.value||'units') : unitSelect.value);
       const val = parseFloat(prompt(`Enter known distance in ${u}:`, '10'));
-      if (!isNaN(val) && val>0){ scale = pixels / val; unit = u; updateScaleLabel(); }
-      else alert('Invalid number.');
+      if (!isNaN(val) && val>0){ 
+        scale = pixels / val; // pixels per unit in IMAGE space
+        unit = u; 
+        updateScaleLabel(); 
+      } else {
+        alert('Invalid number.');
+      }
       calibrating = false; calStart = null; draw(); updateLive();
     }
     return;
@@ -188,9 +197,12 @@ function convexHull(pts){
 }
 function computeAllMetrics(){
   if (!scale || points.length<2) return null;
+
+  // convert clicks to IMAGE pixel space
   const ptsImg = points.map(p=>canvasToImgCoords(p.x,p.y));
   const n = ptsImg.length;
 
+  // pairwise distances in image px
   let sumPairs=0, countPairs=0, sumMin=0, sumMax=0;
   for (let j=0;j<n;j++){
     let dmin=Infinity, dmax=-Infinity;
@@ -205,13 +217,17 @@ function computeAllMetrics(){
     }
     sumMin += dmin; sumMax += dmax;
   }
+
+  // convert to chosen units
   const IFD = (sumPairs / countPairs) / scale;
   const NND = (sumMin / n) / scale;
   const FND = (sumMax / n) / scale;
 
+  // convex hull in image px
   let areaPx2 = NaN, periPx = NaN;
   if (n>=3){
-    const hull = convexHull(points).map(p=>canvasToImgCoords(p.x,p.y));
+    const hullCanvas = convexHull(points);
+    const hull = hullCanvas.map(p=>canvasToImgCoords(p.x,p.y));
     let A=0,P=0;
     for (let i=0;i<hull.length;i++){
       const a=hull[i], b=hull[(i+1)%hull.length];
@@ -219,10 +235,10 @@ function computeAllMetrics(){
       P += Math.hypot(a.x-b.x, a.y-b.y);
     }
     areaPx2 = Math.abs(A)/2;
-    periPx = P;
+    periPx  = P;
   }
-  const areaUnits2 = isNaN(areaPx2) ? NaN : areaPx2 / (scale*scale);
-  const periUnits  = isNaN(periPx)  ? NaN : periPx / scale;
+  const areaUnits2 = isNaN(areaPx2) ? NaN : areaPx2 / (scale*scale); // unit^2
+  const periUnits  = isNaN(periPx)  ? NaN : periPx / scale;          // unit
 
   return { IFD, NND, FND, areaUnits2, periUnits };
 }
@@ -230,7 +246,10 @@ function computeAllMetrics(){
 // live panel
 function updateLive(){
   const m = computeAllMetrics();
-  if (!m){ liveIFD.textContent=liveNND.textContent=liveFND.textContent=liveArea.textContent=livePerim.textContent='—'; return; }
+  if (!m){ 
+    liveIFD.textContent=liveNND.textContent=liveFND.textContent=liveArea.textContent=livePerim.textContent='—'; 
+    return; 
+  }
   liveIFD.textContent  = m.IFD.toFixed(3) + ' ' + unit;
   liveNND.textContent  = m.NND.toFixed(3) + ' ' + unit;
   liveFND.textContent  = m.FND.toFixed(3) + ' ' + unit;
@@ -292,11 +311,11 @@ appendRowBtn.addEventListener('click', ()=>{
   ];
   cells.forEach(v=>{ const td=row.insertCell(-1); td.textContent=v; });
 
-  // prep for next frame (keep code editable)
+  // prep for next frame
   points=[]; draw(); updateLive();
 });
 
-// “Measure” button still just opens the copy panel for convenience
+// “Measure” button: open copy panel
 measureBtn.addEventListener('click', openModalWithCurrent);
 
 // Export CSV
