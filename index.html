@@ -9,35 +9,35 @@
 <body>
 <header>
   <h1>Shoal Cohesion Tool</h1>
-  <p class="sub">Click one point per fish → compute IFD / NND / FND + hull Area & Perimeter → export CSV</p>
+  <p class="sub">Mark one point at the center of each fish to calculate shoal cohesion and vertical position.</p>
 </header>
 
 <section class="panel">
   <div class="group">
-    <label>Researcher</label>
-    <input id="researcher" placeholder="Initials or ID"/>
+    <label for="researcher">Researcher</label>
+    <input id="researcher" placeholder="Initials or ID" />
   </div>
   <div class="group">
-    <label>Video</label>
-    <input id="video" placeholder="Video file / code"/>
+    <label for="video">Video</label>
+    <input id="video" placeholder="Video file / code" />
   </div>
   <div class="group">
-    <label>Tank</label>
-    <input id="tank" placeholder="Tank / group ID"/>
+    <label for="tank">Tank</label>
+    <input id="tank" placeholder="Tank / group ID" />
   </div>
   <div class="group">
-    <label>Frame time</label>
-    <input id="frametime" placeholder="e.g., 0:15"/>
+    <label for="frametime">Frame time</label>
+    <input id="frametime" placeholder="e.g., 0:15" />
   </div>
   <div class="group">
-    <label>Image code</label>
-    <input id="imageCode" placeholder="Your code for this image"/>
+    <label for="imageCode">Image code</label>
+    <input id="imageCode" placeholder="Your code for this image" />
   </div>
 </section>
 
 <section class="panel">
   <div class="group">
-    <label>Units</label>
+    <label for="unitSelect">Units</label>
     <select id="unitSelect">
       <option value="cm">cm</option>
       <option value="mm">mm</option>
@@ -45,13 +45,13 @@
       <option value="in">in</option>
       <option value="custom">custom…</option>
     </select>
-    <input id="customUnit" placeholder="your unit" style="display:none;"/>
+    <input id="customUnit" placeholder="your unit" style="display:none;" />
   </div>
 
   <div class="group">
     <button id="loadBtn">Open images…</button>
-    <span class="hint">or drag & drop files into the canvas</span>
-    <input id="fileInput" type="file" accept="image/*" multiple style="display:none"/>
+    <span class="hint">or drag and drop images into the canvas</span>
+    <input id="fileInput" type="file" accept="image/*" multiple style="display:none" />
   </div>
 
   <div class="group">
@@ -63,17 +63,26 @@
 
 <section class="panel">
   <div class="group">
-    <button id="startCal">Start calibration</button>
+    <button id="startCal">Calibrate tank height</button>
+    <button id="resetCal">Reset calibration</button>
     <span id="scaleLabel">Scale: not set</span>
   </div>
+  <div class="group full calibration-info">
+    <strong>Calibration:</strong>
+    <span id="calibrationStatus">Click “Calibrate tank height”, then mark two points on the bottom and one point at the water surface.</span>
+  </div>
+</section>
+
+<section class="panel">
   <div class="group">
     <button id="undoBtn">Undo point (Z)</button>
     <button id="clearBtn">Clear points (Shift+A)</button>
     <button id="measureBtn">Measure</button>
-    <button id="exportBtn">Export CSV</button>
+    <button id="exportBtn">Export frame CSV</button>
+    <button id="exportFishBtn">Export fish heights CSV</button>
   </div>
   <div class="group">
-    <label><input type="checkbox" id="showHull" checked> Show convex hull</label>
+    <label><input type="checkbox" id="showHull" checked /> Show convex hull</label>
   </div>
 </section>
 
@@ -81,14 +90,30 @@
   <canvas id="canvas" width="1024" height="768"></canvas>
 </div>
 
-<!-- Live readout -->
-<div id="liveBox" class="panel" style="justify-content:flex-start; gap:24px;">
+<div id="liveBox" class="panel live-grid">
   <div><strong>Live IFD</strong>: <span id="liveIFD">—</span></div>
   <div><strong>Live NND</strong>: <span id="liveNND">—</span></div>
   <div><strong>Live FND</strong>: <span id="liveFND">—</span></div>
   <div><strong>Live Area</strong>: <span id="liveArea">—</span></div>
   <div><strong>Live Perimeter</strong>: <span id="livePerim">—</span></div>
+  <div><strong>Mean height</strong>: <span id="liveMeanHeight">—</span></div>
+  <div><strong>Vertical SD</strong>: <span id="liveVerticalSD">—</span></div>
+  <div><strong>Vertical range</strong>: <span id="liveVerticalRange">—</span></div>
 </div>
+
+<section class="panel">
+  <div class="group full">
+    <label>Current fish heights</label>
+    <div class="table-wrap">
+      <table id="currentHeightsTable">
+        <thead>
+          <tr><th>Fish</th><th>Height from bottom</th><th>Relative height</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
 <section class="panel">
   <div class="group">
@@ -100,37 +125,55 @@
 <section class="panel">
   <div class="group full">
     <label>Per-frame results</label>
-    <table id="resultsTable">
-      <thead>
-        <tr>
-          <th>Researcher</th><th>Video</th><th>Tank</th><th>Frame</th>
-          <th>IFD</th><th>NND</th><th>FND</th>
-          <th>Hull area</th><th>Hull perimeter</th>
-          <th>Units</th><th>Image code</th><th>Filename</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Researcher</th><th>Video</th><th>Tank</th><th>Frame</th>
+            <th>IFD</th><th>NND</th><th>FND</th>
+            <th>Hull area</th><th>Hull perimeter</th>
+            <th>Fish count</th><th>Tank height</th><th>Mean height</th>
+            <th>Mean relative height (%)</th><th>Vertical SD</th><th>Vertical range</th>
+            <th>Units</th><th>Image code</th><th>Filename</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="group full">
+    <label>Individual fish results</label>
+    <div class="table-wrap">
+      <table id="fishResultsTable">
+        <thead>
+          <tr>
+            <th>Researcher</th><th>Video</th><th>Tank</th><th>Frame</th>
+            <th>Image code</th><th>Fish</th><th>Height</th>
+            <th>Relative height (%)</th><th>Units</th><th>Filename</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 </section>
 
 <footer>
-  <p>Tip: set scale once per session (same apparatus). Press <kbd>Z</kbd> to undo last point, <kbd>Shift</kbd>+<kbd>A</kbd> to clear all points.</p>
-<p style="margin-top:6px;font-size:12px;">
-  © 2025 Matheus Gallas-Lopes — Licensed under
-  <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">
-    CC BY-NC 4.0 (Attribution–NonCommercial)
-  </a>
-</p>
+  <p>Use the same anatomical reference for every fish. Press <kbd>Z</kbd> to undo the last point and <kbd>Shift</kbd>+<kbd>A</kbd> to clear all fish points.</p>
+  <p style="margin-top:6px;font-size:12px;">
+    © 2025 Matheus Gallas-Lopes — Licensed under
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>
+  </p>
   <p style="margin:4px 0 0;">
-  <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">
-    <img alt="License: CC BY-NC 4.0"
-         src="https://img.shields.io/badge/License-CC_BY--NC_4.0-lightgrey.svg">
-  </a>
-</p>
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">
+      <img alt="License: CC BY-NC 4.0" src="https://img.shields.io/badge/License-CC_BY--NC_4.0-lightgrey.svg" />
+    </a>
+  </p>
 </footer>
 
-<!-- Copy panel (modal) -->
 <div id="modal" class="modal" aria-hidden="true">
   <div class="modal-card">
     <div class="modal-head">
@@ -143,6 +186,9 @@
       <div class="row"><span>FND:</span> <code id="cFND">—</code> <button data-copy="cFND">Copy</button></div>
       <div class="row"><span>Area:</span> <code id="cArea">—</code> <button data-copy="cArea">Copy</button></div>
       <div class="row"><span>Perimeter:</span> <code id="cPerim">—</code> <button data-copy="cPerim">Copy</button></div>
+      <div class="row"><span>Mean height:</span> <code id="cMeanHeight">—</code> <button data-copy="cMeanHeight">Copy</button></div>
+      <div class="row"><span>Vertical SD:</span> <code id="cVerticalSD">—</code> <button data-copy="cVerticalSD">Copy</button></div>
+      <div class="row"><span>Vertical range:</span> <code id="cVerticalRange">—</code> <button data-copy="cVerticalRange">Copy</button></div>
     </div>
     <div class="modal-foot">
       <button id="copyCSV">Copy all (CSV)</button>
