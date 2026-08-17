@@ -1,4 +1,4 @@
-# Shoal Cohesion Tool
+# Shoal Cohesion Tool 
 
 A browser-based tool for manually marking fish positions in still images and calculating shoal cohesion and vertical-position metrics.
 
