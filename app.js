@@ -18,6 +18,7 @@ const measureBtn = document.getElementById('measureBtn');
 const exportBtn = document.getElementById('exportBtn');
 const exportFishBtn = document.getElementById('exportFishBtn');
 const showHull = document.getElementById('showHull');
+const showIndividualHeights = document.getElementById('showIndividualHeights');
 
 const researcherEl = document.getElementById('researcher');
 const videoEl = document.getElementById('video');
@@ -144,7 +145,7 @@ function draw(){
     ctx.arc(p.x,p.y,5,0,2*Math.PI);
     ctx.fill();
 
-    const label = vertical
+    const label = showIndividualHeights.checked && vertical
       ? `${index+1}: ${vertical.heights[index].height.toFixed(2)} ${unit}`
       : `${index+1}`;
     ctx.fillText(label,p.x+8,p.y-8);
@@ -152,7 +153,7 @@ function draw(){
 }
 
 function drawCalibration(){
-  if (!tankCalibration.bottomA) return;
+  if (!calibrating || !tankCalibration.bottomA) return;
 
   const a = imgToCanvasCoords(tankCalibration.bottomA);
   const b = tankCalibration.bottomB ? imgToCanvasCoords(tankCalibration.bottomB) : null;
@@ -334,6 +335,12 @@ startCalBtn.addEventListener('click',()=>{
     return;
   }
 
+  if (!tankEl.value.trim()){
+    const tankValue = prompt('Enter the tank / group ID:','');
+    if (tankValue === null || !tankValue.trim()) return;
+    tankEl.value = tankValue.trim();
+  }
+
   resetCalibration(false);
   calibrating = true;
   calibrationStep = 0;
@@ -400,7 +407,7 @@ canvas.addEventListener('click',()=>{
       ? (customUnit.value.trim() || 'units')
       : unitSelect.value;
 
-    const value = parseFloat(prompt(`Enter the water-column height in ${selectedUnit}:`,'30'));
+    const value = parseFloat(prompt(`Enter the water-column height in ${selectedUnit}:`,'20'));
 
     if (!Number.isFinite(value) || value<=0){
       tankCalibration.surface = null;
@@ -457,6 +464,7 @@ clearBtn.addEventListener('click',()=>{
 });
 
 showHull.addEventListener('change',draw);
+showIndividualHeights.addEventListener('change',draw);
 
 function convexHull(pts){
   const p = pts.slice().sort((a,b)=>a.x===b.x ? a.y-b.y : a.x-b.x);
