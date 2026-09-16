@@ -42,6 +42,8 @@ const livePerim = document.getElementById('livePerim');
 const liveMeanHeight = document.getElementById('liveMeanHeight');
 const liveVerticalSD = document.getElementById('liveVerticalSD');
 const liveVerticalRange = document.getElementById('liveVerticalRange');
+const liveHorizontalSD = document.getElementById('liveHorizontalSD');
+const liveHorizontalRange = document.getElementById('liveHorizontalRange');
 
 const modal = document.getElementById('modal');
 const closeModal = document.getElementById('closeModal');
@@ -54,6 +56,8 @@ const cPerim = document.getElementById('cPerim');
 const cMeanHeight = document.getElementById('cMeanHeight');
 const cVerticalSD = document.getElementById('cVerticalSD');
 const cVerticalRange = document.getElementById('cVerticalRange');
+const cHorizontalSD = document.getElementById('cHorizontalSD');
+const cHorizontalRange = document.getElementById('cHorizontalRange');
 const copyCSVBtn = document.getElementById('copyCSV');
 const copyTSVBtn = document.getElementById('copyTSV');
 const appendRowBtn = document.getElementById('appendRowBtn');
@@ -597,9 +601,49 @@ function computeVerticalMetrics(){
   };
 }
 
+function computeHorizontalMetrics(){
+  if (
+    !scale ||
+    !tankCalibration.bottomA ||
+    !tankCalibration.bottomB ||
+    points.length<1
+  ){
+    return null;
+  }
+
+  const a = tankCalibration.bottomA;
+  const b = tankCalibration.bottomB;
+  const vx = b.x-a.x;
+  const vy = b.y-a.y;
+  const length = Math.hypot(vx,vy);
+  if (!length) return null;
+
+  const ux = vx/length;
+  const uy = vy/length;
+
+  const values = points.map(point=>{
+    const imgPoint = canvasToImgCoords(point.x,point.y);
+    const positionPx = (imgPoint.x-a.x)*ux + (imgPoint.y-a.y)*uy;
+    return positionPx/scale;
+  });
+
+  const meanHorizontal = values.reduce((sum,value)=>sum+value,0)/values.length;
+  const variance = values.reduce((sum,value)=>sum+(value-meanHorizontal)**2,0)/values.length;
+  const horizontalSD = Math.sqrt(variance);
+  const minHorizontal = Math.min(...values);
+  const maxHorizontal = Math.max(...values);
+  const horizontalRange = maxHorizontal-minHorizontal;
+
+  return {
+    horizontalSD,
+    horizontalRange
+  };
+}
+
 function updateLive(){
   const cohesion = computeAllMetrics();
   const vertical = computeVerticalMetrics();
+  const horizontal = computeHorizontalMetrics();
 
   if (cohesion){
     liveIFD.textContent = `${cohesion.IFD.toFixed(3)} ${unit}`;
@@ -623,6 +667,14 @@ function updateLive(){
     liveMeanHeight.textContent = '—';
     liveVerticalSD.textContent = '—';
     liveVerticalRange.textContent = '—';
+  }
+
+  if (horizontal){
+    liveHorizontalSD.textContent = `${horizontal.horizontalSD.toFixed(3)} ${unit}`;
+    liveHorizontalRange.textContent = `${horizontal.horizontalRange.toFixed(3)} ${unit}`;
+  } else {
+    liveHorizontalSD.textContent = '—';
+    liveHorizontalRange.textContent = '—';
   }
 
   updateCurrentHeights(vertical);
@@ -649,8 +701,9 @@ function updateCurrentHeights(vertical){
 function openModalWithCurrent(){
   const cohesion = computeAllMetrics();
   const vertical = computeVerticalMetrics();
+  const horizontal = computeHorizontalMetrics();
 
-  if (!cohesion || !vertical){
+  if (!cohesion || !vertical || !horizontal){
     alert('Calibrate the tank height and place at least two fish points.');
     return;
   }
@@ -663,6 +716,8 @@ function openModalWithCurrent(){
   cMeanHeight.textContent = vertical.meanHeight.toFixed(3);
   cVerticalSD.textContent = vertical.verticalSD.toFixed(3);
   cVerticalRange.textContent = vertical.verticalRange.toFixed(3);
+  cHorizontalSD.textContent = horizontal.horizontalSD.toFixed(3);
+  cHorizontalRange.textContent = horizontal.horizontalRange.toFixed(3);
   modal.setAttribute('aria-hidden','false');
 }
 
@@ -695,7 +750,9 @@ async function copyAll(delimiter){
     cPerim.textContent,
     cMeanHeight.textContent,
     cVerticalSD.textContent,
-    cVerticalRange.textContent
+    cVerticalRange.textContent,
+    cHorizontalSD.textContent,
+    cHorizontalRange.textContent
   ];
 
   try{
@@ -709,8 +766,9 @@ copyTSVBtn.addEventListener('click',()=>copyAll('\t'));
 appendRowBtn.addEventListener('click',()=>{
   const cohesion = computeAllMetrics();
   const vertical = computeVerticalMetrics();
+  const horizontal = computeHorizontalMetrics();
 
-  if (!cohesion || !vertical){
+  if (!cohesion || !vertical || !horizontal){
     alert('Calibrate the tank height and place at least two fish points.');
     return;
   }
@@ -738,6 +796,8 @@ appendRowBtn.addEventListener('click',()=>{
     vertical.meanRelativeHeight.toFixed(3),
     vertical.verticalSD.toFixed(3),
     vertical.verticalRange.toFixed(3),
+    horizontal.horizontalSD.toFixed(3),
+    horizontal.horizontalRange.toFixed(3),
     unit,
     imageCodeEl.value || '',
     filename
