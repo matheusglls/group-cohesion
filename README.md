@@ -10,16 +10,17 @@ A browser-based tool for manually marking fish positions in still images and cal
 - Mark one point at the center of each fish
 - Calculate shoal cohesion metrics:
   - Inter-fish distance (IFD)
+  - IFD standard deviation
   - Nearest-neighbor distance (NND)
   - Furthest-neighbor distance (FND)
   - Convex hull area
   - Convex hull perimeter
+  - Mean horizontal IFD and horizontal IFD standard deviation
+  - Mean vertical IFD and vertical IFD standard deviation
 - Calculate vertical-position metrics:
   - Individual fish height
   - Mean height
   - Mean relative height
-  - Vertical standard deviation
-  - Vertical range
 - Optionally display:
   - Convex hull
   - Individual fish heights
@@ -71,6 +72,7 @@ The frame-level CSV includes:
 - Tank
 - Frame
 - IFD
+- IFD SD
 - NND
 - FND
 - Hull area
@@ -79,8 +81,10 @@ The frame-level CSV includes:
 - Tank height
 - Mean height
 - Mean relative height
-- Vertical SD
-- Vertical range
+- Mean horizontal IFD
+- Horizontal IFD SD
+- Mean vertical IFD
+- Vertical IFD SD
 - Units
 - Image code
 - Filename
@@ -99,6 +103,20 @@ The individual-fish CSV includes:
 - Relative height
 - Units
 - Filename
+
+## Metric definitions
+
+- **IFD:** mean pairwise Euclidean distance between all fish, `c = sqrt(a² + b²)`.
+- **IFD SD:** standard deviation of all pairwise IFD values.
+- **NND:** mean distance from each fish to its nearest neighbor.
+- **FND:** mean distance from each fish to its furthest neighbor.
+- **Hull area:** area of the convex polygon enclosing the outermost fish.
+- **Hull perimeter:** perimeter of that convex polygon.
+- **Mean height:** mean perpendicular height of the fish above the calibrated tank bottom.
+- **Mean horizontal IFD:** mean absolute pairwise horizontal component (`a`), parallel to the tank bottom.
+- **Horizontal IFD SD:** standard deviation of all pairwise horizontal components.
+- **Mean vertical IFD:** mean absolute pairwise vertical component (`b`), perpendicular to the tank bottom.
+- **Vertical IFD SD:** standard deviation of all pairwise vertical components.
 
 ## Citation
 

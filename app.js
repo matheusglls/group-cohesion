@@ -40,10 +40,11 @@ const liveFND = document.getElementById('liveFND');
 const liveArea = document.getElementById('liveArea');
 const livePerim = document.getElementById('livePerim');
 const liveMeanHeight = document.getElementById('liveMeanHeight');
-const liveVerticalSD = document.getElementById('liveVerticalSD');
-const liveVerticalRange = document.getElementById('liveVerticalRange');
-const liveHorizontalSD = document.getElementById('liveHorizontalSD');
-const liveHorizontalRange = document.getElementById('liveHorizontalRange');
+const liveIFDSD = document.getElementById('liveIFDSD');
+const liveMeanHorizontalIFD = document.getElementById('liveMeanHorizontalIFD');
+const liveHorizontalIFDSD = document.getElementById('liveHorizontalIFDSD');
+const liveMeanVerticalIFD = document.getElementById('liveMeanVerticalIFD');
+const liveVerticalIFDSD = document.getElementById('liveVerticalIFDSD');
 
 const modal = document.getElementById('modal');
 const closeModal = document.getElementById('closeModal');
@@ -54,10 +55,11 @@ const cFND = document.getElementById('cFND');
 const cArea = document.getElementById('cArea');
 const cPerim = document.getElementById('cPerim');
 const cMeanHeight = document.getElementById('cMeanHeight');
-const cVerticalSD = document.getElementById('cVerticalSD');
-const cVerticalRange = document.getElementById('cVerticalRange');
-const cHorizontalSD = document.getElementById('cHorizontalSD');
-const cHorizontalRange = document.getElementById('cHorizontalRange');
+const cIFDSD = document.getElementById('cIFDSD');
+const cMeanHorizontalIFD = document.getElementById('cMeanHorizontalIFD');
+const cHorizontalIFDSD = document.getElementById('cHorizontalIFDSD');
+const cMeanVerticalIFD = document.getElementById('cMeanVerticalIFD');
+const cVerticalIFDSD = document.getElementById('cVerticalIFDSD');
 const copyCSVBtn = document.getElementById('copyCSV');
 const copyTSVBtn = document.getElementById('copyTSV');
 const appendRowBtn = document.getElementById('appendRowBtn');
@@ -496,26 +498,57 @@ function computeAllMetrics(){
   const ptsImg = points.map(p=>canvasToImgCoords(p.x,p.y));
   const n = ptsImg.length;
 
-  let sumPairs=0, countPairs=0, sumMin=0, sumMax=0;
+  let horizontalUnit = {x:1,y:0};
+  if (tankCalibration.bottomA && tankCalibration.bottomB){
+    const vx = tankCalibration.bottomB.x-tankCalibration.bottomA.x;
+    const vy = tankCalibration.bottomB.y-tankCalibration.bottomA.y;
+    const length = Math.hypot(vx,vy);
+    if (length) horizontalUnit = {x:vx/length,y:vy/length};
+  }
+  const verticalUnit = {x:-horizontalUnit.y,y:horizontalUnit.x};
+
+  const pairDistances = [];
+  const horizontalDistances = [];
+  const verticalDistances = [];
+  let sumMin=0, sumMax=0;
+
   for (let j=0;j<n;j++){
     let dmin=Infinity, dmax=-Infinity;
     for (let i=0;i<n;i++){
       if (i===j) continue;
+
       const dx = ptsImg[j].x-ptsImg[i].x;
       const dy = ptsImg[j].y-ptsImg[i].y;
-      const d = Math.hypot(dx,dy);
+      const dPx = Math.hypot(dx,dy);
+
       if (i>j){
-        sumPairs += d;
-        countPairs++;
+        const horizontalPx = Math.abs(dx*horizontalUnit.x + dy*horizontalUnit.y);
+        const verticalPx = Math.abs(dx*verticalUnit.x + dy*verticalUnit.y);
+        pairDistances.push(dPx/scale);
+        horizontalDistances.push(horizontalPx/scale);
+        verticalDistances.push(verticalPx/scale);
       }
-      if (d<dmin) dmin = d;
-      if (d>dmax) dmax = d;
+
+      if (dPx<dmin) dmin = dPx;
+      if (dPx>dmax) dmax = dPx;
     }
     sumMin += dmin;
     sumMax += dmax;
   }
 
-  const IFD = (sumPairs/countPairs)/scale;
+  const mean = values=>values.reduce((sum,value)=>sum+value,0)/values.length;
+  const populationSD = values=>{
+    const m = mean(values);
+    const variance = values.reduce((sum,value)=>sum+(value-m)**2,0)/values.length;
+    return Math.sqrt(variance);
+  };
+
+  const IFD = mean(pairDistances);
+  const IFDSD = populationSD(pairDistances);
+  const meanHorizontalIFD = mean(horizontalDistances);
+  const horizontalIFDSD = populationSD(horizontalDistances);
+  const meanVerticalIFD = mean(verticalDistances);
+  const verticalIFDSD = populationSD(verticalDistances);
   const NND = (sumMin/n)/scale;
   const FND = (sumMax/n)/scale;
 
@@ -542,7 +575,18 @@ function computeAllMetrics(){
   const areaUnits2 = Number.isNaN(areaPx2) ? NaN : areaPx2/(scale*scale);
   const periUnits = Number.isNaN(periPx) ? NaN : periPx/scale;
 
-  return {IFD,NND,FND,areaUnits2,periUnits};
+  return {
+    IFD,
+    IFDSD,
+    meanHorizontalIFD,
+    horizontalIFDSD,
+    meanVerticalIFD,
+    verticalIFDSD,
+    NND,
+    FND,
+    areaUnits2,
+    periUnits
+  };
 }
 
 function computeVerticalMetrics(){
@@ -583,98 +627,47 @@ function computeVerticalMetrics(){
 
   const values = heights.map(item=>item.height);
   const meanHeight = values.reduce((sum,value)=>sum+value,0)/values.length;
-  const variance = values.reduce((sum,value)=>sum+(value-meanHeight)**2,0)/values.length;
-  const verticalSD = Math.sqrt(variance);
-  const minHeight = Math.min(...values);
-  const maxHeight = Math.max(...values);
-  const verticalRange = maxHeight-minHeight;
   const meanRelativeHeight = (meanHeight/tankCalibration.tankHeight)*100;
 
   return {
     heights,
     meanHeight,
-    meanRelativeHeight,
-    verticalSD,
-    minHeight,
-    maxHeight,
-    verticalRange
-  };
-}
-
-function computeHorizontalMetrics(){
-  if (
-    !scale ||
-    !tankCalibration.bottomA ||
-    !tankCalibration.bottomB ||
-    points.length<1
-  ){
-    return null;
-  }
-
-  const a = tankCalibration.bottomA;
-  const b = tankCalibration.bottomB;
-  const vx = b.x-a.x;
-  const vy = b.y-a.y;
-  const length = Math.hypot(vx,vy);
-  if (!length) return null;
-
-  const ux = vx/length;
-  const uy = vy/length;
-
-  const values = points.map(point=>{
-    const imgPoint = canvasToImgCoords(point.x,point.y);
-    const positionPx = (imgPoint.x-a.x)*ux + (imgPoint.y-a.y)*uy;
-    return positionPx/scale;
-  });
-
-  const meanHorizontal = values.reduce((sum,value)=>sum+value,0)/values.length;
-  const variance = values.reduce((sum,value)=>sum+(value-meanHorizontal)**2,0)/values.length;
-  const horizontalSD = Math.sqrt(variance);
-  const minHorizontal = Math.min(...values);
-  const maxHorizontal = Math.max(...values);
-  const horizontalRange = maxHorizontal-minHorizontal;
-
-  return {
-    horizontalSD,
-    horizontalRange
+    meanRelativeHeight
   };
 }
 
 function updateLive(){
   const cohesion = computeAllMetrics();
   const vertical = computeVerticalMetrics();
-  const horizontal = computeHorizontalMetrics();
 
   if (cohesion){
     liveIFD.textContent = `${cohesion.IFD.toFixed(3)} ${unit}`;
+    liveIFDSD.textContent = `${cohesion.IFDSD.toFixed(3)} ${unit}`;
     liveNND.textContent = `${cohesion.NND.toFixed(3)} ${unit}`;
     liveFND.textContent = `${cohesion.FND.toFixed(3)} ${unit}`;
     liveArea.textContent = Number.isNaN(cohesion.areaUnits2) ? '—' : `${cohesion.areaUnits2.toFixed(3)} ${unit}²`;
     livePerim.textContent = Number.isNaN(cohesion.periUnits) ? '—' : `${cohesion.periUnits.toFixed(3)} ${unit}`;
+    liveMeanHorizontalIFD.textContent = `${cohesion.meanHorizontalIFD.toFixed(3)} ${unit}`;
+    liveHorizontalIFDSD.textContent = `${cohesion.horizontalIFDSD.toFixed(3)} ${unit}`;
+    liveMeanVerticalIFD.textContent = `${cohesion.meanVerticalIFD.toFixed(3)} ${unit}`;
+    liveVerticalIFDSD.textContent = `${cohesion.verticalIFDSD.toFixed(3)} ${unit}`;
   } else {
     liveIFD.textContent = '—';
+    liveIFDSD.textContent = '—';
     liveNND.textContent = '—';
     liveFND.textContent = '—';
     liveArea.textContent = '—';
     livePerim.textContent = '—';
+    liveMeanHorizontalIFD.textContent = '—';
+    liveHorizontalIFDSD.textContent = '—';
+    liveMeanVerticalIFD.textContent = '—';
+    liveVerticalIFDSD.textContent = '—';
   }
 
   if (vertical){
     liveMeanHeight.textContent = `${vertical.meanHeight.toFixed(3)} ${unit}`;
-    liveVerticalSD.textContent = `${vertical.verticalSD.toFixed(3)} ${unit}`;
-    liveVerticalRange.textContent = `${vertical.verticalRange.toFixed(3)} ${unit}`;
   } else {
     liveMeanHeight.textContent = '—';
-    liveVerticalSD.textContent = '—';
-    liveVerticalRange.textContent = '—';
-  }
-
-  if (horizontal){
-    liveHorizontalSD.textContent = `${horizontal.horizontalSD.toFixed(3)} ${unit}`;
-    liveHorizontalRange.textContent = `${horizontal.horizontalRange.toFixed(3)} ${unit}`;
-  } else {
-    liveHorizontalSD.textContent = '—';
-    liveHorizontalRange.textContent = '—';
   }
 
   updateCurrentHeights(vertical);
@@ -701,23 +694,23 @@ function updateCurrentHeights(vertical){
 function openModalWithCurrent(){
   const cohesion = computeAllMetrics();
   const vertical = computeVerticalMetrics();
-  const horizontal = computeHorizontalMetrics();
 
-  if (!cohesion || !vertical || !horizontal){
+  if (!cohesion || !vertical){
     alert('Calibrate the tank height and place at least two fish points.');
     return;
   }
 
   cIFD.textContent = cohesion.IFD.toFixed(3);
+  cIFDSD.textContent = cohesion.IFDSD.toFixed(3);
   cNND.textContent = cohesion.NND.toFixed(3);
   cFND.textContent = cohesion.FND.toFixed(3);
   cArea.textContent = Number.isNaN(cohesion.areaUnits2) ? '' : cohesion.areaUnits2.toFixed(3);
   cPerim.textContent = Number.isNaN(cohesion.periUnits) ? '' : cohesion.periUnits.toFixed(3);
   cMeanHeight.textContent = vertical.meanHeight.toFixed(3);
-  cVerticalSD.textContent = vertical.verticalSD.toFixed(3);
-  cVerticalRange.textContent = vertical.verticalRange.toFixed(3);
-  cHorizontalSD.textContent = horizontal.horizontalSD.toFixed(3);
-  cHorizontalRange.textContent = horizontal.horizontalRange.toFixed(3);
+  cMeanHorizontalIFD.textContent = cohesion.meanHorizontalIFD.toFixed(3);
+  cHorizontalIFDSD.textContent = cohesion.horizontalIFDSD.toFixed(3);
+  cMeanVerticalIFD.textContent = cohesion.meanVerticalIFD.toFixed(3);
+  cVerticalIFDSD.textContent = cohesion.verticalIFDSD.toFixed(3);
   modal.setAttribute('aria-hidden','false');
 }
 
@@ -744,15 +737,16 @@ document.querySelectorAll('[data-copy]').forEach(button=>{
 async function copyAll(delimiter){
   const values = [
     cIFD.textContent,
+    cIFDSD.textContent,
     cNND.textContent,
     cFND.textContent,
     cArea.textContent,
     cPerim.textContent,
     cMeanHeight.textContent,
-    cVerticalSD.textContent,
-    cVerticalRange.textContent,
-    cHorizontalSD.textContent,
-    cHorizontalRange.textContent
+    cMeanHorizontalIFD.textContent,
+    cHorizontalIFDSD.textContent,
+    cMeanVerticalIFD.textContent,
+    cVerticalIFDSD.textContent
   ];
 
   try{
@@ -766,9 +760,8 @@ copyTSVBtn.addEventListener('click',()=>copyAll('\t'));
 appendRowBtn.addEventListener('click',()=>{
   const cohesion = computeAllMetrics();
   const vertical = computeVerticalMetrics();
-  const horizontal = computeHorizontalMetrics();
 
-  if (!cohesion || !vertical || !horizontal){
+  if (!cohesion || !vertical){
     alert('Calibrate the tank height and place at least two fish points.');
     return;
   }
@@ -786,6 +779,7 @@ appendRowBtn.addEventListener('click',()=>{
     tankEl.value || '',
     frameEl.value || '',
     cohesion.IFD.toFixed(3),
+    cohesion.IFDSD.toFixed(3),
     cohesion.NND.toFixed(3),
     cohesion.FND.toFixed(3),
     Number.isNaN(cohesion.areaUnits2) ? '' : cohesion.areaUnits2.toFixed(3),
@@ -794,10 +788,10 @@ appendRowBtn.addEventListener('click',()=>{
     tankCalibration.tankHeight.toFixed(3),
     vertical.meanHeight.toFixed(3),
     vertical.meanRelativeHeight.toFixed(3),
-    vertical.verticalSD.toFixed(3),
-    vertical.verticalRange.toFixed(3),
-    horizontal.horizontalSD.toFixed(3),
-    horizontal.horizontalRange.toFixed(3),
+    cohesion.meanHorizontalIFD.toFixed(3),
+    cohesion.horizontalIFDSD.toFixed(3),
+    cohesion.meanVerticalIFD.toFixed(3),
+    cohesion.verticalIFDSD.toFixed(3),
     unit,
     imageCodeEl.value || '',
     filename

@@ -94,15 +94,16 @@
 
 <div id="liveBox" class="panel live-grid">
   <div><strong>Live IFD</strong>: <span id="liveIFD">—</span></div>
+  <div><strong>IFD SD</strong>: <span id="liveIFDSD">—</span></div>
   <div><strong>Live NND</strong>: <span id="liveNND">—</span></div>
   <div><strong>Live FND</strong>: <span id="liveFND">—</span></div>
   <div><strong>Live Area</strong>: <span id="liveArea">—</span></div>
   <div><strong>Live Perimeter</strong>: <span id="livePerim">—</span></div>
   <div><strong>Mean height</strong>: <span id="liveMeanHeight">—</span></div>
-  <div><strong>Vertical SD</strong>: <span id="liveVerticalSD">—</span></div>
-  <div><strong>Vertical range</strong>: <span id="liveVerticalRange">—</span></div>
-  <div><strong>Horizontal SD</strong>: <span id="liveHorizontalSD">—</span></div>
-  <div><strong>Horizontal range</strong>: <span id="liveHorizontalRange">—</span></div>
+  <div><strong>Mean horizontal IFD</strong>: <span id="liveMeanHorizontalIFD">—</span></div>
+  <div><strong>Horizontal IFD SD</strong>: <span id="liveHorizontalIFDSD">—</span></div>
+  <div><strong>Mean vertical IFD</strong>: <span id="liveMeanVerticalIFD">—</span></div>
+  <div><strong>Vertical IFD SD</strong>: <span id="liveVerticalIFDSD">—</span></div>
 </div>
 
 <section class="panel">
@@ -134,11 +135,11 @@
         <thead>
           <tr>
             <th>Researcher</th><th>Video</th><th>Tank</th><th>Frame</th>
-            <th>IFD</th><th>NND</th><th>FND</th>
+            <th>IFD</th><th>IFD SD</th><th>NND</th><th>FND</th>
             <th>Hull area</th><th>Hull perimeter</th>
             <th>Fish count</th><th>Tank height</th><th>Mean height</th>
-            <th>Mean relative height (%)</th><th>Vertical SD</th><th>Vertical range</th>
-            <th>Horizontal SD</th><th>Horizontal range</th>
+            <th>Mean relative height (%)</th><th>Mean horizontal IFD</th><th>Horizontal IFD SD</th>
+            <th>Mean vertical IFD</th><th>Vertical IFD SD</th>
             <th>Units</th><th>Image code</th><th>Filename</th>
           </tr>
         </thead>
@@ -166,6 +167,35 @@
   </div>
 </section>
 
+<section class="panel">
+  <div class="group full">
+    <label>Metric glossary</label>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Brief definition</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>IFD</td><td>Mean pairwise distance between all fish. For each pair: c = √(a² + b²), where a is the horizontal component and b is the vertical component.</td></tr>
+          <tr><td>IFD SD</td><td>Standard deviation of all pairwise IFD values (c): SD = √[Σ(c − mean IFD)² / m], where m is the number of fish pairs.</td></tr>
+          <tr><td>NND</td><td>Mean nearest-neighbor distance: for each fish, the distance to its closest fish is found, then these distances are averaged.</td></tr>
+          <tr><td>FND</td><td>Mean furthest-neighbor distance: for each fish, the distance to its farthest fish is found, then these distances are averaged.</td></tr>
+          <tr><td>Hull area</td><td>Area of the convex polygon enclosing the outermost fish.</td></tr>
+          <tr><td>Hull perimeter</td><td>Perimeter of the convex polygon enclosing the outermost fish.</td></tr>
+          <tr><td>Mean height</td><td>Mean perpendicular height of the fish above the calibrated tank bottom.</td></tr>
+          <tr><td>Mean relative height</td><td>Mean height expressed as a percentage of the calibrated water-column height.</td></tr>
+          <tr><td>Mean horizontal IFD</td><td>Mean absolute horizontal component (a) of all pairwise fish distances, measured parallel to the tank bottom.</td></tr>
+          <tr><td>Horizontal IFD SD</td><td>Standard deviation of the horizontal components (a) of all pairwise fish distances.</td></tr>
+          <tr><td>Mean vertical IFD</td><td>Mean absolute vertical component (b) of all pairwise fish distances, measured perpendicular to the tank bottom.</td></tr>
+          <tr><td>Vertical IFD SD</td><td>Standard deviation of the vertical components (b) of all pairwise fish distances.</td></tr>
+          <tr><td>Individual height</td><td>Perpendicular height of each marked fish above the calibrated tank bottom.</td></tr>
+          <tr><td>Relative height</td><td>Individual height expressed as a percentage of the calibrated water-column height.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 <footer>
   <p>Use the same anatomical reference for every fish. Press <kbd>Z</kbd> to undo the last point and <kbd>Shift</kbd>+<kbd>A</kbd> to clear all fish points.</p>
   <p style="margin-top:6px;font-size:12px;">
@@ -187,15 +217,16 @@
     </div>
     <div class="modal-body">
       <div class="row"><span>IFD:</span> <code id="cIFD">—</code> <button data-copy="cIFD">Copy</button></div>
+      <div class="row"><span>IFD SD:</span> <code id="cIFDSD">—</code> <button data-copy="cIFDSD">Copy</button></div>
       <div class="row"><span>NND:</span> <code id="cNND">—</code> <button data-copy="cNND">Copy</button></div>
       <div class="row"><span>FND:</span> <code id="cFND">—</code> <button data-copy="cFND">Copy</button></div>
       <div class="row"><span>Area:</span> <code id="cArea">—</code> <button data-copy="cArea">Copy</button></div>
       <div class="row"><span>Perimeter:</span> <code id="cPerim">—</code> <button data-copy="cPerim">Copy</button></div>
       <div class="row"><span>Mean height:</span> <code id="cMeanHeight">—</code> <button data-copy="cMeanHeight">Copy</button></div>
-      <div class="row"><span>Vertical SD:</span> <code id="cVerticalSD">—</code> <button data-copy="cVerticalSD">Copy</button></div>
-      <div class="row"><span>Vertical range:</span> <code id="cVerticalRange">—</code> <button data-copy="cVerticalRange">Copy</button></div>
-      <div class="row"><span>Horizontal SD:</span> <code id="cHorizontalSD">—</code> <button data-copy="cHorizontalSD">Copy</button></div>
-      <div class="row"><span>Horizontal range:</span> <code id="cHorizontalRange">—</code> <button data-copy="cHorizontalRange">Copy</button></div>
+      <div class="row"><span>Mean horizontal IFD:</span> <code id="cMeanHorizontalIFD">—</code> <button data-copy="cMeanHorizontalIFD">Copy</button></div>
+      <div class="row"><span>Horizontal IFD SD:</span> <code id="cHorizontalIFDSD">—</code> <button data-copy="cHorizontalIFDSD">Copy</button></div>
+      <div class="row"><span>Mean vertical IFD:</span> <code id="cMeanVerticalIFD">—</code> <button data-copy="cMeanVerticalIFD">Copy</button></div>
+      <div class="row"><span>Vertical IFD SD:</span> <code id="cVerticalIFDSD">—</code> <button data-copy="cVerticalIFDSD">Copy</button></div>
     </div>
     <div class="modal-foot">
       <button id="copyCSV">Copy all (CSV)</button>
