@@ -9,10 +9,10 @@ A browser-based tool for manually marking fish positions in still images and cal
 - Calibrate tank height from the image
 - Mark one point at the center of each fish
 - Calculate shoal cohesion metrics:
-  - Inter-fish distance (IFD)
+  - Mean inter-fish distance (Mean IFD)
   - IFD standard deviation
-  - Nearest-neighbor distance (NND)
-  - Furthest-neighbor distance (FND)
+  - Mean nearest-neighbor distance (Mean NND)
+  - Mean furthest-neighbor distance (Mean FND)
   - Convex hull area
   - Convex hull perimeter
   - Mean horizontal IFD and horizontal IFD standard deviation
@@ -20,7 +20,9 @@ A browser-based tool for manually marking fish positions in still images and cal
 - Calculate vertical-position metrics:
   - Individual fish height
   - Mean height
+  - Height SD
   - Mean relative height
+  - Relative height SD
 - Optionally display:
   - Convex hull
   - Individual fish heights
@@ -71,22 +73,24 @@ The frame-level CSV includes:
 - Video
 - Tank
 - Frame
-- IFD
+- Image code
+- Mean IFD
 - IFD SD
-- NND
-- FND
+- Mean NND
+- Mean FND
 - Hull area
 - Hull perimeter
 - Fish count
 - Tank height
 - Mean height
+- Height SD
 - Mean relative height
+- Relative height SD
 - Mean horizontal IFD
 - Horizontal IFD SD
 - Mean vertical IFD
 - Vertical IFD SD
-- Units
-- Image code
+- Unit
 - Filename
 
 ### Individual-fish results
@@ -100,23 +104,28 @@ The individual-fish CSV includes:
 - Image code
 - Fish number
 - Height
-- Relative height
-- Units
+- Individual relative height
+- Unit
 - Filename
 
 ## Metric definitions
 
-- **IFD:** mean pairwise Euclidean distance between all fish, `c = sqrt(a² + b²)`.
+- **Mean IFD:** mean pairwise Euclidean distance between all fish, `c = sqrt(a² + b²)`.
 - **IFD SD:** standard deviation of all pairwise IFD values.
-- **NND:** mean distance from each fish to its nearest neighbor.
-- **FND:** mean distance from each fish to its furthest neighbor.
+- **Mean NND:** mean distance from each fish to its nearest neighbor.
+- **Mean FND:** mean distance from each fish to its furthest neighbor.
 - **Hull area:** area of the convex polygon enclosing the outermost fish.
 - **Hull perimeter:** perimeter of that convex polygon.
-- **Mean height:** mean perpendicular height of the fish above the calibrated tank bottom.
+- **Mean height:** mean perpendicular distance of the fish from the calibrated tank bottom.
+- **Height SD:** standard deviation of the perpendicular distance of the fish from the calibrated tank bottom.
+- **Mean relative height:** mean height of the fish expressed as a percentage of the calibrated tank height.
+- **Relative height SD:** standard deviation of the height of the fish expressed as a percentage of the calibrated tank height.
 - **Mean horizontal IFD:** mean absolute pairwise horizontal component (`a`), parallel to the tank bottom.
 - **Horizontal IFD SD:** standard deviation of all pairwise horizontal components.
 - **Mean vertical IFD:** mean absolute pairwise vertical component (`b`), perpendicular to the tank bottom.
 - **Vertical IFD SD:** standard deviation of all pairwise vertical components.
+- **Individual height:** perpendicular distance of each fish from the calibrated tank bottom.
+- **Individual relative height:** height of each fish expressed as a percentage of the calibrated tank height.
 
 ## Citation
 

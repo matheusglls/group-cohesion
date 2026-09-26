@@ -27,6 +27,7 @@ button:active{transform:translateY(1px)}
 #dropzone{max-width:1200px;margin:14px auto;border:2px dashed #d7dfdb;border-radius:14px;background:#fff;display:flex;justify-content:center;align-items:center;min-height:480px;overflow:auto;box-shadow:0 4px 18px rgba(0,0,0,.025)}
 #canvas{max-width:100%;height:auto;display:block}
 .live-grid{justify-content:flex-start;gap:12px}
+.live-heading{width:100%;margin:0;font-size:16px}
 .live-grid>div{padding:8px 10px;background:#f7faf8;border:1px solid var(--border);border-radius:9px}
 .table-wrap{width:100%;overflow-x:auto}
 table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;margin-top:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden}

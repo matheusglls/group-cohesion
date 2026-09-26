@@ -40,6 +40,9 @@ const liveFND = document.getElementById('liveFND');
 const liveArea = document.getElementById('liveArea');
 const livePerim = document.getElementById('livePerim');
 const liveMeanHeight = document.getElementById('liveMeanHeight');
+const liveHeightSD = document.getElementById('liveHeightSD');
+const liveMeanRelativeHeight = document.getElementById('liveMeanRelativeHeight');
+const liveRelativeHeightSD = document.getElementById('liveRelativeHeightSD');
 const liveIFDSD = document.getElementById('liveIFDSD');
 const liveMeanHorizontalIFD = document.getElementById('liveMeanHorizontalIFD');
 const liveHorizontalIFDSD = document.getElementById('liveHorizontalIFDSD');
@@ -55,6 +58,9 @@ const cFND = document.getElementById('cFND');
 const cArea = document.getElementById('cArea');
 const cPerim = document.getElementById('cPerim');
 const cMeanHeight = document.getElementById('cMeanHeight');
+const cHeightSD = document.getElementById('cHeightSD');
+const cMeanRelativeHeight = document.getElementById('cMeanRelativeHeight');
+const cRelativeHeightSD = document.getElementById('cRelativeHeightSD');
 const cIFDSD = document.getElementById('cIFDSD');
 const cMeanHorizontalIFD = document.getElementById('cMeanHorizontalIFD');
 const cHorizontalIFDSD = document.getElementById('cHorizontalIFDSD');
@@ -626,13 +632,20 @@ function computeVerticalMetrics(){
   });
 
   const values = heights.map(item=>item.height);
+  const relativeValues = heights.map(item=>item.relativeHeight);
   const meanHeight = values.reduce((sum,value)=>sum+value,0)/values.length;
-  const meanRelativeHeight = (meanHeight/tankCalibration.tankHeight)*100;
+  const heightVariance = values.reduce((sum,value)=>sum+(value-meanHeight)**2,0)/values.length;
+  const heightSD = Math.sqrt(heightVariance);
+  const meanRelativeHeight = relativeValues.reduce((sum,value)=>sum+value,0)/relativeValues.length;
+  const relativeHeightVariance = relativeValues.reduce((sum,value)=>sum+(value-meanRelativeHeight)**2,0)/relativeValues.length;
+  const relativeHeightSD = Math.sqrt(relativeHeightVariance);
 
   return {
     heights,
     meanHeight,
-    meanRelativeHeight
+    heightSD,
+    meanRelativeHeight,
+    relativeHeightSD
   };
 }
 
@@ -666,8 +679,14 @@ function updateLive(){
 
   if (vertical){
     liveMeanHeight.textContent = `${vertical.meanHeight.toFixed(3)} ${unit}`;
+    liveHeightSD.textContent = `${vertical.heightSD.toFixed(3)} ${unit}`;
+    liveMeanRelativeHeight.textContent = `${vertical.meanRelativeHeight.toFixed(3)}%`;
+    liveRelativeHeightSD.textContent = `${vertical.relativeHeightSD.toFixed(3)}%`;
   } else {
     liveMeanHeight.textContent = '—';
+    liveHeightSD.textContent = '—';
+    liveMeanRelativeHeight.textContent = '—';
+    liveRelativeHeightSD.textContent = '—';
   }
 
   updateCurrentHeights(vertical);
@@ -707,6 +726,9 @@ function openModalWithCurrent(){
   cArea.textContent = Number.isNaN(cohesion.areaUnits2) ? '' : cohesion.areaUnits2.toFixed(3);
   cPerim.textContent = Number.isNaN(cohesion.periUnits) ? '' : cohesion.periUnits.toFixed(3);
   cMeanHeight.textContent = vertical.meanHeight.toFixed(3);
+  cHeightSD.textContent = vertical.heightSD.toFixed(3);
+  cMeanRelativeHeight.textContent = vertical.meanRelativeHeight.toFixed(3);
+  cRelativeHeightSD.textContent = vertical.relativeHeightSD.toFixed(3);
   cMeanHorizontalIFD.textContent = cohesion.meanHorizontalIFD.toFixed(3);
   cHorizontalIFDSD.textContent = cohesion.horizontalIFDSD.toFixed(3);
   cMeanVerticalIFD.textContent = cohesion.meanVerticalIFD.toFixed(3);
@@ -743,6 +765,9 @@ async function copyAll(delimiter){
     cArea.textContent,
     cPerim.textContent,
     cMeanHeight.textContent,
+    cHeightSD.textContent,
+    cMeanRelativeHeight.textContent,
+    cRelativeHeightSD.textContent,
     cMeanHorizontalIFD.textContent,
     cHorizontalIFDSD.textContent,
     cMeanVerticalIFD.textContent,
@@ -778,6 +803,7 @@ appendRowBtn.addEventListener('click',()=>{
     videoEl.value || '',
     tankEl.value || '',
     frameEl.value || '',
+    imageCodeEl.value || '',
     cohesion.IFD.toFixed(3),
     cohesion.IFDSD.toFixed(3),
     cohesion.NND.toFixed(3),
@@ -787,13 +813,14 @@ appendRowBtn.addEventListener('click',()=>{
     vertical.heights.length,
     tankCalibration.tankHeight.toFixed(3),
     vertical.meanHeight.toFixed(3),
+    vertical.heightSD.toFixed(3),
     vertical.meanRelativeHeight.toFixed(3),
+    vertical.relativeHeightSD.toFixed(3),
     cohesion.meanHorizontalIFD.toFixed(3),
     cohesion.horizontalIFDSD.toFixed(3),
     cohesion.meanVerticalIFD.toFixed(3),
     cohesion.verticalIFDSD.toFixed(3),
     unit,
-    imageCodeEl.value || '',
     filename
   ];
 
