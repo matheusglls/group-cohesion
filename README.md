@@ -74,14 +74,14 @@ The frame-level CSV includes:
 - Tank
 - Frame
 - Image code
+- Fish count
+- Tank height
 - Mean IFD
 - IFD SD
 - Mean NND
 - Mean FND
 - Hull area
 - Hull perimeter
-- Fish count
-- Tank height
 - Mean height
 - Height SD
 - Mean relative height
